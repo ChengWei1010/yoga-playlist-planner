@@ -19,6 +19,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { SortableRow } from './SortableRow';
 import { defaultRows, parseSongMin, formatTotalTime, BUCKET_COLORS } from './data';
 import { startLogin, handleCallback, getToken, logout, getSpotifyUser, fetchPlaylist, msToMinSec } from './spotify';
+import { cloudLoad, cloudSavePlaylist, cloudSaveIndex, cloudDeletePlaylist } from './firebase';
 import './App.css';
 
 let nextId = 100;
@@ -170,12 +171,20 @@ export default function App() {
   const [bucketDraft, setBucketDraft] = useState([]);
   const [newBucketName, setNewBucketName] = useState('');
   const fileInputRef = useRef(null);
+  const cloudSaveRef = useRef(null);
 
-  // Auto-save whenever rows or playlist name change
+  // Auto-save to localStorage; debounce cloud save when logged in
   useEffect(() => {
     savePlaylistToStorage(activePlaylistId, rows, playlistName);
     setPlaylistIndex(loadIndex());
-  }, [rows, playlistName, activePlaylistId]);
+    const uid = spotifyUser?.id;
+    if (!uid) return;
+    clearTimeout(cloudSaveRef.current);
+    cloudSaveRef.current = setTimeout(() => {
+      cloudSavePlaylist(uid, activePlaylistId, { rows, playlistName, updatedAt: Date.now() });
+      cloudSaveIndex(uid, loadIndex());
+    }, 2000);
+  }, [rows, playlistName, activePlaylistId, spotifyUser]);
 
   // Handle OAuth callback
   useEffect(() => {
@@ -189,10 +198,32 @@ export default function App() {
     }
   }, []);
 
-  // Fetch user profile once we have a token
+  // Fetch user profile once we have a token; load cloud data on login
   useEffect(() => {
     if (!token) { setSpotifyUser(null); return; }
-    getSpotifyUser(token).then(u => setSpotifyUser(u));
+    getSpotifyUser(token).then(async u => {
+      setSpotifyUser(u);
+      if (!u?.id) return;
+      const cloud = await cloudLoad(u.id);
+      if (!cloud?.index?.length) return;
+      cloud.index.forEach(({ id }) => {
+        const pl = cloud.playlists?.[id];
+        if (pl) localStorage.setItem(`yoga_planner_playlist_${id}`, JSON.stringify({ rows: pl.rows, playlistName: pl.playlistName }));
+      });
+      localStorage.setItem('yoga_planner_index', JSON.stringify(cloud.index));
+      const currentId = localStorage.getItem('yoga_planner_active');
+      const activeId = cloud.index.find(p => p.id === currentId)?.id ?? cloud.index[0]?.id;
+      if (!activeId) return;
+      localStorage.setItem('yoga_planner_active', activeId);
+      const pl = cloud.playlists?.[activeId];
+      if (pl) {
+        recalcNextId(pl.rows);
+        setRows(pl.rows);
+        setPlaylistName(pl.playlistName);
+        setActivePlaylistId(activeId);
+      }
+      setPlaylistIndex(cloud.index);
+    });
   }, [token]);
 
   const sensors = useSensors(
@@ -295,6 +326,10 @@ export default function App() {
     const newIndex = loadIndex();
     setPlaylistIndex(newIndex);
     setDeletePlaylistConfirm(null);
+    if (spotifyUser?.id) {
+      cloudDeletePlaylist(spotifyUser.id, id);
+      cloudSaveIndex(spotifyUser.id, newIndex);
+    }
     if (id === activePlaylistId) handleSwitchPlaylist(newIndex[0].id);
   }
 
