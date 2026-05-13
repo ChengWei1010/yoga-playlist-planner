@@ -19,7 +19,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { SortableRow } from './SortableRow';
 import { defaultRows, parseSongMin, formatTotalTime, BUCKET_COLORS } from './data';
 import { startLogin, handleCallback, getToken, logout, getSpotifyUser, fetchPlaylist, msToMinSec } from './spotify';
-import { cloudLoad, cloudSavePlaylist, cloudSaveIndex, cloudDeletePlaylist } from './firebase';
+import { cloudLoad, cloudSavePlaylist, cloudSaveIndex, cloudDeletePlaylist, cloudSaveBuckets } from './firebase';
 import './App.css';
 
 let nextId = 100;
@@ -222,6 +222,10 @@ export default function App() {
         setRows(pl.rows);
         setPlaylistName(pl.playlistName);
         setActivePlaylistId(activeId);
+      }
+      if (cloud.buckets?.length) {
+        localStorage.setItem(BUCKETS_KEY, JSON.stringify(cloud.buckets));
+        setBucketOptions(cloud.buckets);
       }
       setPlaylistIndex(cloud.index);
     });
@@ -458,6 +462,7 @@ export default function App() {
     const clean = bucketDraft.map(b => ({ ...b, name: b.name.trim() })).filter(b => b.name);
     setBucketOptions(clean);
     saveBuckets(clean);
+    if (spotifyUser?.id) cloudSaveBuckets(spotifyUser.id, clean);
     setShowBucketModal(false);
   }
 

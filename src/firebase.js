@@ -19,7 +19,7 @@ export async function cloudLoad(userId) {
   try {
     const snap = await getDoc(doc(db, 'users', userId));
     if (!snap.exists()) return null;
-    const { index } = snap.data();
+    const { index, buckets } = snap.data();
     if (!index?.length) return null;
 
     const playlists = {};
@@ -29,7 +29,7 @@ export async function cloudLoad(userId) {
         if (plSnap.exists()) playlists[id] = plSnap.data();
       })
     );
-    return { index, playlists };
+    return { index, playlists, buckets };
   } catch (e) {
     console.warn('Cloud load failed:', e);
     return null;
@@ -49,6 +49,14 @@ export async function cloudSaveIndex(userId, index) {
     await setDoc(doc(db, 'users', userId), { index }, { merge: true });
   } catch (e) {
     console.warn('Cloud index save failed:', e);
+  }
+}
+
+export async function cloudSaveBuckets(userId, buckets) {
+  try {
+    await setDoc(doc(db, 'users', userId), { buckets }, { merge: true });
+  } catch (e) {
+    console.warn('Cloud buckets save failed:', e);
   }
 }
 
