@@ -1202,3 +1202,9 @@ body {
   background: #f1f5f9;
   border-color: #cbd5e1;
 }
+
+/* ─── iPad / tablet column widths ─── */
+@media (max-width: 1300px) {
+  .th-song { width: 130px; }
+  .th-posture { min-width: 200px; max-width: none; }
+}
