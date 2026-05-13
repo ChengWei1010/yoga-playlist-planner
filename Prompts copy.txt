@@ -1,0 +1,48 @@
+COMMANDS
+npm run dev
+pkill -f vite
+
+PROMPTS
+Build a yoga music playlist planner app. There is table that I can drag to reorder each row for the songs, and on the bottom it should calculate the total time of the entire playlist. Use the image in the folder as reference, and the theme should be in light mode. Use this as the theme color: #A2B2BF
+Connect the app to prompt login to Spotify account, and make the song connects to the actual songs listed in Spotify.
+Use these background colors for the buckets: Intro, integration, cool down, savasana, ending: light blue; when the bucket name includes cardio, core, hip, sculpt: light orange
+Add a merge rows function that multiple songs can be combined or added to the group within the same bucket. So Each bucket could have multiple songs
+Save the edited text so that after each refresh the data entered is not lost
+Make the main bucket name to have the left border in the row, and remove the borders for the sub songs. sub songs should have the color, just no borders.
+for Surrender, Savasana, Ending, use green
+for names that has cardio, use pink
+Values in Time column should be the sum of all songs in each bucket. only list the time in the main row of each bucket. leave the sub songs blank
+Make the song column longer and posture column narrower 
+Add a column that I can mark the row to be a draft or confirmed. all default to be in draft
+If the status is draft, the background of the row to be gray. if confirmed, to be white. Change the confirmed label to be ready
+Make the add bucket default bucket name to be "Type to add bucket name". Also when I search songs for the bottom rows, I can not see the entire MusicBrainz dropdown.
+Reset the table to a default state. Add a button on the top to reset option, with a confirmation popup. The default state should have: Intro, Integration, Sun A, Sun B, Cardio 1, Core, Balance, Cool down, Surrender, Savasana, Ending
+Remove the target icon on the top of the page.
+The add bucket and reorder bucket row does not work as expected. When add a bucket, it has a row on the bottom but I can not edit the bucket name. when I reorder it, it moves one of the the top row together
+The reorder is still not working. It group the new bucket with the 4th row. It should be moving 1 row.
+Make the bucket name selectable, and move the add bucket button to the bottom of the table. The bucket options: Intro, Integration, Sun A, Sun B, Cardio, Core, Squat, Balance, Hip, Cool down, Surrender, Savasana, Ending
+When I add a new bucket, there are 2 rows appear on the page. and when I edit one row, the other row is edited too. There should be only 1 row when I add a new bucket
+Is it still not fixed. And the additional row added on the very top can not be removed.
+The artist search in Musicbrainz is a bit slow. What combination should I use? For example: song name + artist name
+
+Add a import playlist button on the top of the page, so that I can add a public playlist and start with that in the table.
+
+https://open.spotify.com/playlist/7KrgrYFUcbvpAzbaJrSF4w?si=clBrsOT9Q6e9RwdLlOaYIw&pi=YSowph8BQECO8
+
+Are both read from and write to Sptify required tokens from Spotify?
+After I import a playlist, when I assign a song to a bucket, the rest of the songs should not be the sub-items in the bucket above, rather remain untouch in the bucket names.
+What if you add an action in each row so that I can swich between bucket or sub song -- does that work?
+Is it possible to preview and listen to the songs?
+Lef-align song min text. Change song min to song length. Right-align the remove buttons, decrease the width for posture, and increase column width for song name. Make sure the spotify dropdown are not showing up after I re-order the rows.
+Left aligned the spotify play icons and left align the draft labels.
+I can not change from a bucket to sub item. Can you enable that too?
+Is it possible to add an export function to export this into a Spotify playlist?
+Yes. Can you also add a dropdown or playlist selector near the top left title, so that I can select and work on different playlists? Also the default name of a playlist should be "New Playlist"
+What are some recommeneded placeholder names if a playlist name is empty?
+Add a confirmation popu before remove a playlist from the left nav bar
+I'd like to have a place for me to manage (edit, remove) the bucket dropdowns. What do you recommend?
+When I re-order the rows, the Spotify dropdown will display on the page, and they disppear when I click on the blank spaces of the page. Can you hide the Spotify song dropdowns when re-ordering?
+Increase the width of the bucket column so that I can see the full length of the label. Decrease the length for the posture column. Allow me to select and change the colors for the bucket in the setting. 
+The Spotify search is not very stable. sometimes when I clear values in the field and it won't show up anymore
+The buckets in the manage buckets should have a order feature, and change the active state of the color selected to be a checkmark inside the circle. remove the green on the far right. Change the "Add button to be dark gray
+Allow the posture text box to be 2 lines. Default is 1 line. only enable 2 lines when the text wraps to the second line.
