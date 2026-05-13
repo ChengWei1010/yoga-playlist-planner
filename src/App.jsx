@@ -170,6 +170,7 @@ export default function App() {
   const [showBucketModal, setShowBucketModal] = useState(false);
   const [bucketDraft, setBucketDraft] = useState([]);
   const [newBucketName, setNewBucketName] = useState('');
+  const [viewMode, setViewMode] = useState(false);
   const fileInputRef = useRef(null);
   const cloudSaveRef = useRef(null);
 
@@ -493,12 +494,16 @@ export default function App() {
         </div>
 
         <div className="header-right">
+          <div className="mode-toggle">
+            <button className={`mode-btn${!viewMode ? ' mode-active' : ''}`} onClick={() => setViewMode(false)}>Edit</button>
+            <button className={`mode-btn${viewMode ? ' mode-active' : ''}`} onClick={() => setViewMode(true)}>View</button>
+          </div>
           <button className="gear-btn" onClick={handleOpenBucketModal} title="Manage buckets">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
             </svg>
           </button>
-          <button className="reset-btn" onClick={() => setShowResetConfirm(true)}>Reset</button>
+          {!viewMode && <button className="reset-btn" onClick={() => setShowResetConfirm(true)}>Reset</button>}
           <button className="import-btn" onClick={() => { setShowImportModal(true); setImportError(''); setImportUrl(''); }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
@@ -600,14 +605,14 @@ export default function App() {
           <table className="playlist-table">
             <thead>
               <tr>
-                <th className="th-drag" aria-label="Reorder"></th>
+                {!viewMode && <th className="th-drag" aria-label="Reorder"></th>}
                 <th className="th-bucket">Bucket</th>
                 <th className="th-time">Time</th>
                 <th className="th-song">Song</th>
                 <th className="th-songmin">Song length</th>
                 <th className="th-posture">Posture</th>
-                <th className="th-status">Status</th>
-                <th className="th-actions" aria-label="Actions"></th>
+                {!viewMode && <th className="th-status">Status</th>}
+                {!viewMode && <th className="th-actions" aria-label="Actions"></th>}
               </tr>
             </thead>
             <DndContext
@@ -664,6 +669,7 @@ export default function App() {
                         onDelete={handleDelete}
                         onAddBelow={handleAddBelow}
                         onAddSongToBucket={handleAddSongToBucket}
+                        viewMode={viewMode}
                       />
                     );
                   })}
@@ -671,6 +677,7 @@ export default function App() {
               </SortableContext>
             </DndContext>
           </table>
+          {!viewMode && (
           <div className="table-footer-actions">
             <button className="add-bucket-btn" onClick={handleAddRow}>
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
@@ -680,6 +687,7 @@ export default function App() {
               Add Bucket
             </button>
           </div>
+          )}
         </main>
       </div>
 
