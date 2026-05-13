@@ -12,13 +12,15 @@ export const defaultRows = [
   { id: 'd2',  bucket: 'Integration',  bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
   { id: 'd3',  bucket: 'Sun A',        bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
   { id: 'd4',  bucket: 'Sun B',        bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
-  { id: 'd5',  bucket: 'Cardio 1',     bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
+  { id: 'd5',  bucket: 'Cardio',       bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
   { id: 'd6',  bucket: 'Core',         bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
-  { id: 'd7',  bucket: 'Balance',      bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
-  { id: 'd8',  bucket: 'Cool down',    bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
-  { id: 'd9',  bucket: 'Surrender',    bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
-  { id: 'd10', bucket: 'Savasana',     bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
-  { id: 'd11', bucket: 'Ending',       bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
+  { id: 'd7',  bucket: 'Squat',        bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
+  { id: 'd8',  bucket: 'Balance',      bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
+  { id: 'd9',  bucket: 'Hip',          bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
+  { id: 'd10', bucket: 'Cool down',    bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
+  { id: 'd11', bucket: 'Surrender',    bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
+  { id: 'd12', bucket: 'Savasana',     bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
+  { id: 'd13', bucket: 'Ending',       bucketTime: '', song: '', songMin: '', posture: '', status: 'draft' },
 ];
 
 export const initialRows = [
