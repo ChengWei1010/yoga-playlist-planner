@@ -182,7 +182,7 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     if (code) {
-      window.history.replaceState({}, '', '/');
+      window.history.replaceState({}, '', import.meta.env.BASE_URL);
       handleCallback(code)
         .then(t => setToken(t))
         .catch(err => console.error('Spotify auth failed:', err));

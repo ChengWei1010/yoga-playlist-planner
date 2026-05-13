@@ -1,8 +1,8 @@
 // Replace SPOTIFY_CLIENT_ID with your actual Client ID from developer.spotify.com
 export const SPOTIFY_CLIENT_ID = 'c4dd68c06a6540ea8aa1b291d6772937';
 export const REDIRECT_URI = import.meta.env.PROD
-  ? 'https://chengwei1010.github.io/yoga-playlist-planner/callback'
-  : 'http://127.0.0.1:5174/callback';
+  ? 'https://chengwei1010.github.io/yoga-playlist-planner/'
+  : 'http://127.0.0.1:5174/';
 export const SCOPES = [
   'user-read-private',
   'user-read-email',
