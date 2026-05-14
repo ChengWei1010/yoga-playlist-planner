@@ -452,6 +452,106 @@ export default function App() {
     setShowResetConfirm(false);
   }
 
+  // ─── Lock screen export ───
+  const CANVAS_ACCENT = {
+    blue:   '#5ba8f5',
+    orange: '#f59342',
+    pink:   '#f472b6',
+    yellow: '#fbbf24',
+    purple: '#a78bfa',
+    teal:   '#2dd4bf',
+  };
+
+  function handleDownloadLockScreen() {
+    const W = 1179, H = 2556;
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#0d0d14';
+    ctx.fillRect(0, 0, W, H);
+
+    const PAD_X = 90;
+    const TOP_SAFE = 1040; // below iPhone clock (~40% down)
+    const BOT_SAFE = H - 230;
+    const contentW = W - PAD_X * 2;
+
+    // Group rows by bucket
+    const groups = [];
+    rows.forEach(row => {
+      const posture = row.posture?.trim();
+      if (row.isBucketHeader) {
+        const bucketDef = bucketOptions.find(b => b.name === row.bucket);
+        const color = bucketDef?.color ? (CANVAS_ACCENT[bucketDef.color] || 'rgba(255,255,255,0.6)') : 'rgba(255,255,255,0.6)';
+        groups.push({ bucket: row.bucket || '—', color, postures: posture ? [posture] : [] });
+      } else if (groups.length && posture) {
+        groups[groups.length - 1].postures.push(posture);
+      }
+    });
+
+    function wrapText(text, maxW, font) {
+      ctx.font = font;
+      const words = text.split(/\s+/);
+      const lines = [];
+      let line = '';
+      for (const word of words) {
+        const test = line ? line + ' ' + word : word;
+        if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = word; }
+        else line = test;
+      }
+      if (line) lines.push(line);
+      return lines;
+    }
+
+    // Playlist name label
+    ctx.font = '500 18px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.fillText(playlistName.toUpperCase(), PAD_X, TOP_SAFE - 24);
+
+    const BUCKET_FONT = '600 15px -apple-system, BlinkMacSystemFont, sans-serif';
+    const POSTURE_FONT = '400 13px -apple-system, BlinkMacSystemFont, sans-serif';
+
+    let y = TOP_SAFE;
+    for (const group of groups) {
+      if (y >= BOT_SAFE) break;
+      // Colored dot
+      ctx.beginPath();
+      ctx.arc(PAD_X + 5, y - 5, 4, 0, Math.PI * 2);
+      ctx.fillStyle = group.color;
+      ctx.fill();
+      // Bucket name
+      ctx.font = BUCKET_FONT;
+      ctx.fillStyle = 'rgba(255,255,255,0.90)';
+      ctx.fillText(group.bucket, PAD_X + 18, y);
+      y += 26;
+      // Postures
+      for (const posture of group.postures) {
+        for (const seg of posture.split('\n')) {
+          const trimmed = seg.trim();
+          if (!trimmed) continue;
+          for (const line of wrapText(trimmed, contentW - 20, POSTURE_FONT)) {
+            if (y >= BOT_SAFE) break;
+            ctx.font = POSTURE_FONT;
+            ctx.fillStyle = 'rgba(255,255,255,0.52)';
+            ctx.fillText(line, PAD_X + 18, y);
+            y += 18;
+          }
+        }
+      }
+      y += 14;
+    }
+
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${playlistName.replace(/[^a-z0-9]/gi, '_')}_lockscreen.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  }
+
   // ─── Bucket manager ───
   function handleOpenBucketModal() {
     setBucketDraft(bucketOptions.map(b => ({ ...b })));
@@ -528,6 +628,14 @@ export default function App() {
             <button className={`mode-btn${!viewMode ? ' mode-active' : ''}`} onClick={() => setViewMode(false)}>Edit</button>
             <button className={`mode-btn${viewMode ? ' mode-active' : ''}`} onClick={() => setViewMode(true)}>View</button>
           </div>
+          {viewMode && (
+            <button className="lockscreen-btn" onClick={handleDownloadLockScreen} title="Download as iPhone lock screen">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.5" strokeWidth="2.5"/>
+              </svg>
+              Lock Screen
+            </button>
+          )}
           <button className="gear-btn" onClick={handleOpenBucketModal} title="Manage buckets">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>

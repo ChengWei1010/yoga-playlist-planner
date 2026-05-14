@@ -704,6 +704,26 @@ body {
   border-color: #93c5fd;
 }
 
+.lockscreen-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #1a1a2e;
+  border: 1px solid #3a3a5c;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  color: #a0aec0;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.lockscreen-btn:hover {
+  background: #252540;
+  border-color: #5ba8f5;
+  color: #5ba8f5;
+}
+
 .import-url-input {
   width: 100%;
   padding: 8px 10px;
