@@ -472,7 +472,7 @@ export default function App() {
     ctx.fillStyle = '#0d0d14';
     ctx.fillRect(0, 0, W, H);
 
-    const PAD_X = 90;
+    const PAD_X = 60;
     const TOP_SAFE = 1040; // below iPhone clock (~40% down)
     const BOT_SAFE = H - 230;
     const contentW = W - PAD_X * 2;
@@ -505,41 +505,41 @@ export default function App() {
     }
 
     // Playlist name label
-    ctx.font = '500 18px -apple-system, BlinkMacSystemFont, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
-    ctx.fillText(playlistName.toUpperCase(), PAD_X, TOP_SAFE - 24);
+    ctx.font = '500 22px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillText(playlistName.toUpperCase(), PAD_X, TOP_SAFE - 28);
 
-    const BUCKET_FONT = '600 15px -apple-system, BlinkMacSystemFont, sans-serif';
-    const POSTURE_FONT = '400 13px -apple-system, BlinkMacSystemFont, sans-serif';
+    const BUCKET_FONT = '700 22px -apple-system, BlinkMacSystemFont, sans-serif';
+    const POSTURE_FONT = '500 18px -apple-system, BlinkMacSystemFont, sans-serif';
 
     let y = TOP_SAFE;
     for (const group of groups) {
       if (y >= BOT_SAFE) break;
       // Colored dot
       ctx.beginPath();
-      ctx.arc(PAD_X + 5, y - 5, 4, 0, Math.PI * 2);
+      ctx.arc(PAD_X + 6, y - 7, 5, 0, Math.PI * 2);
       ctx.fillStyle = group.color;
       ctx.fill();
       // Bucket name
       ctx.font = BUCKET_FONT;
-      ctx.fillStyle = 'rgba(255,255,255,0.90)';
-      ctx.fillText(group.bucket, PAD_X + 18, y);
-      y += 26;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(group.bucket, PAD_X + 22, y);
+      y += 34;
       // Postures
       for (const posture of group.postures) {
         for (const seg of posture.split('\n')) {
           const trimmed = seg.trim();
           if (!trimmed) continue;
-          for (const line of wrapText(trimmed, contentW - 20, POSTURE_FONT)) {
+          for (const line of wrapText(trimmed, contentW - 24, POSTURE_FONT)) {
             if (y >= BOT_SAFE) break;
             ctx.font = POSTURE_FONT;
-            ctx.fillStyle = 'rgba(255,255,255,0.52)';
-            ctx.fillText(line, PAD_X + 18, y);
-            y += 18;
+            ctx.fillStyle = 'rgba(255,255,255,0.82)';
+            ctx.fillText(line, PAD_X + 22, y);
+            y += 26;
           }
         }
       }
-      y += 14;
+      y += 18;
     }
 
     canvas.toBlob(blob => {
