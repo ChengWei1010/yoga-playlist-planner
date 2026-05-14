@@ -26,19 +26,22 @@ let nextId = 100;
 
 // ─── Bucket storage ───
 const DEFAULT_BUCKETS = [
-  { name: 'Intro',       color: 'blue'   },
-  { name: 'Integration', color: 'blue'   },
-  { name: 'Sun A',       color: 'yellow' },
-  { name: 'Sun B',       color: 'yellow' },
-  { name: 'Cardio',      color: 'pink'   },
-  { name: 'Core',        color: 'orange' },
-  { name: 'Squat',       color: 'orange' },
-  { name: 'Balance',     color: 'yellow' },
-  { name: 'Hip',         color: 'orange' },
-  { name: 'Cool down',   color: 'blue'   },
-  { name: 'Surrender',   color: 'teal'   },
-  { name: 'Savasana',    color: 'teal'   },
-  { name: 'Ending',      color: 'teal'   },
+  { name: 'Intro',            color: 'blue'   },
+  { name: 'Integration',      color: 'blue'   },
+  { name: 'Sun A',            color: 'yellow' },
+  { name: 'Sun B',            color: 'yellow' },
+  { name: 'Cardio',           color: 'pink'   },
+  { name: 'Core',             color: 'orange' },
+  { name: 'Squat',            color: 'orange' },
+  { name: 'Balance',          color: 'yellow' },
+  { name: 'Hip',              color: 'orange' },
+  { name: 'Stretch (Seated)', color: 'teal'   },
+  { name: 'Stretch (Belly)',  color: 'teal'   },
+  { name: 'Stretch (Back)',   color: 'teal'   },
+  { name: 'Cool down',        color: 'blue'   },
+  { name: 'Surrender',        color: 'teal'   },
+  { name: 'Savasana',         color: 'teal'   },
+  { name: 'Ending',           color: 'teal'   },
 ];
 const BUCKETS_KEY = 'yoga_planner_buckets';
 function loadBuckets() {
@@ -46,8 +49,11 @@ function loadBuckets() {
     const stored = JSON.parse(localStorage.getItem(BUCKETS_KEY));
     if (!stored) return DEFAULT_BUCKETS;
     // Migrate old string[] format
-    if (typeof stored[0] === 'string') return stored.map(name => ({ name, color: null }));
-    return stored;
+    const normalized = typeof stored[0] === 'string' ? stored.map(name => ({ name, color: null })) : stored;
+    // Merge in any DEFAULT_BUCKETS not already present
+    const storedNames = new Set(normalized.map(b => b.name));
+    const missing = DEFAULT_BUCKETS.filter(b => !storedNames.has(b.name));
+    return missing.length ? [...normalized, ...missing] : normalized;
   } catch { return DEFAULT_BUCKETS; }
 }
 function saveBuckets(buckets) {
