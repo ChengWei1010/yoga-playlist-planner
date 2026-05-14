@@ -472,9 +472,9 @@ export default function App() {
     ctx.fillStyle = '#0d0d14';
     ctx.fillRect(0, 0, W, H);
 
-    const PAD_X = 60;
-    const TOP_SAFE = 1040; // below iPhone clock (~40% down)
-    const BOT_SAFE = H - 230;
+    const PAD_X = 135;
+    const TOP_SAFE = 720;  // just below clock (~28% down)
+    const BOT_SAFE = 1590; // just above music widget (~62% down)
     const contentW = W - PAD_X * 2;
 
     // Group rows by bucket
