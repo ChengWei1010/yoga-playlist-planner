@@ -115,7 +115,10 @@ export async function searchTracks(query, token) {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) {
-      if (res.status === 429) return null;
+      if (res.status === 429) {
+        const retryAfter = parseInt(res.headers.get('Retry-After') || '0', 10) || null;
+        return { rateLimited: true, retryAfter };
+      }
       return [];
     }
     const data = await res.json();
@@ -147,15 +150,19 @@ export async function searchTracks(query, token) {
 }
 
 export async function checkSpotifyAvailable(token) {
-  if (!token) return false;
+  if (!token) return { available: false, retryAfter: null };
   try {
     const res = await fetch(
       'https://api.spotify.com/v1/search?q=yoga&type=track&limit=1',
       { headers: { Authorization: `Bearer ${token}` } }
     );
-    return res.status !== 429;
+    if (res.status === 429) {
+      const retryAfter = parseInt(res.headers.get('Retry-After') || '0', 10) || null;
+      return { available: false, retryAfter };
+    }
+    return { available: true, retryAfter: null };
   } catch {
-    return false;
+    return { available: false, retryAfter: null };
   }
 }
 

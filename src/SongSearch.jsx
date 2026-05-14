@@ -60,9 +60,9 @@ export function SongSearch({ value, token, closeDropdown, onSelect, onChangeDire
         return;
       }
       if (controller.signal.aborted) return;
-      if (tracks === null) {
+      if (tracks?.rateLimited) {
         // Spotify rate limited — fall back to MusicBrainz
-        onRateLimit?.();
+        onRateLimit?.(tracks.retryAfter);
         try {
           const fallback = await searchMusicBrainz(query, controller.signal);
           if (controller.signal.aborted) return;

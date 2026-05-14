@@ -178,7 +178,9 @@ export default function App() {
   const [newBucketName, setNewBucketName] = useState('');
   const [viewMode, setViewMode] = useState(false);
   const [spotifyRateLimited, setSpotifyRateLimited] = useState(false);
+  const [rateLimitSecsLeft, setRateLimitSecsLeft] = useState(null);
   const rateLimitTimerRef = useRef(null);
+  const rateLimitCountdownRef = useRef(null);
   const fileInputRef = useRef(null);
   const cloudSaveRef = useRef(null);
 
@@ -315,15 +317,45 @@ export default function App() {
     setRows(prev => [...prev, { id: String(++nextId), bucket: '', bucketTime: '', song: '', songMin: '', posture: '', status: 'draft', isBucketHeader: true }]);
   }
 
-  function handleRateLimit() {
+  function handleRateLimit(retryAfter) {
     setSpotifyRateLimited(true);
     clearTimeout(rateLimitTimerRef.current);
+    clearInterval(rateLimitCountdownRef.current);
+
+    // Start countdown display if Spotify told us how long to wait
+    if (retryAfter > 0) {
+      setRateLimitSecsLeft(retryAfter);
+      rateLimitCountdownRef.current = setInterval(() => {
+        setRateLimitSecsLeft(s => {
+          if (s <= 1) { clearInterval(rateLimitCountdownRef.current); return null; }
+          return s - 1;
+        });
+      }, 1000);
+    } else {
+      setRateLimitSecsLeft(null);
+    }
+
     // Poll every 30s until Spotify accepts a request again
     function probe() {
       rateLimitTimerRef.current = setTimeout(async () => {
-        const ok = await checkSpotifyAvailable(token);
-        if (ok) setSpotifyRateLimited(false);
-        else probe();
+        const { available, retryAfter: next } = await checkSpotifyAvailable(token);
+        if (available) {
+          setSpotifyRateLimited(false);
+          setRateLimitSecsLeft(null);
+          clearInterval(rateLimitCountdownRef.current);
+        } else {
+          if (next > 0) {
+            setRateLimitSecsLeft(next);
+            clearInterval(rateLimitCountdownRef.current);
+            rateLimitCountdownRef.current = setInterval(() => {
+              setRateLimitSecsLeft(s => {
+                if (s <= 1) { clearInterval(rateLimitCountdownRef.current); return null; }
+                return s - 1;
+              });
+            }, 1000);
+          }
+          probe();
+        }
       }, 30000);
     }
     probe();
@@ -366,20 +398,130 @@ export default function App() {
     setDeletePlaylistConfirm({ id, name: pl?.name || 'this playlist' });
   }
 
-  function confirmDeletePlaylist() {
+  async function confirmDeletePlaylist() {
     const { id } = deletePlaylistConfirm;
     deletePlaylistFromStorage(id);
     const newIndex = loadIndex();
     setPlaylistIndex(newIndex);
     setDeletePlaylistConfirm(null);
     if (spotifyUser?.id) {
-      cloudDeletePlaylist(spotifyUser.id, id);
-      cloudSaveIndex(spotifyUser.id, newIndex);
+      await Promise.all([
+        cloudDeletePlaylist(spotifyUser.id, id),
+        cloudSaveIndex(spotifyUser.id, newIndex),
+      ]);
     }
     if (id === activePlaylistId) handleSwitchPlaylist(newIndex[0].id);
   }
 
   // ─── Save / Load JSON ───
+  const [syncStatus, setSyncStatus] = useState('');
+
+  async function handlePullFromCloud() {
+    const uid = spotifyUser?.id;
+    if (!uid) return;
+    setSyncStatus('pulling');
+    const cloud = await cloudLoad(uid);
+    if (!cloud?.index?.length) { setSyncStatus('pull-empty'); return; }
+
+    // Only pull playlists that exist in the cloud index AND are newer than local.
+    // Never resurrect playlists that were deleted locally after the last push.
+    const localIndex = loadIndex();
+    const localIds = new Set(localIndex.map(p => p.id));
+
+    // For a manual pull we trust cloud fully — but exclude ids that exist locally
+    // with a newer updatedAt (user just edited them and hasn't pushed yet).
+    cloud.index.forEach(({ id }) => {
+      const cloudPl = cloud.playlists?.[id];
+      if (!cloudPl) return;
+      const localRaw = localStorage.getItem(`yoga_planner_playlist_${id}`);
+      const localPl = localRaw ? JSON.parse(localRaw) : null;
+      // Only overwrite if cloud is newer or local doesn't exist
+      if (!localPl || (cloudPl.updatedAt || 0) >= (localPl.updatedAt || 0)) {
+        localStorage.setItem(`yoga_planner_playlist_${id}`, JSON.stringify(cloudPl));
+      }
+    });
+
+    // Merge index: keep local entries (including deletions), add cloud entries not present locally
+    const cloudOnlyEntries = cloud.index.filter(e => !localIds.has(e.id));
+    const mergedIndex = [...localIndex, ...cloudOnlyEntries];
+    localStorage.setItem('yoga_planner_index', JSON.stringify(mergedIndex));
+
+    const currentActiveId = localStorage.getItem('yoga_planner_active');
+    const activeId = mergedIndex.find(p => p.id === currentActiveId)?.id ?? mergedIndex[0]?.id;
+    if (!activeId) { setSyncStatus('pull-done'); setTimeout(() => setSyncStatus(''), 3000); return; }
+    localStorage.setItem('yoga_planner_active', activeId);
+    const pl = JSON.parse(localStorage.getItem(`yoga_planner_playlist_${activeId}`) || 'null');
+    if (pl) {
+      recalcNextId(pl.rows);
+      setRows(pl.rows);
+      setPlaylistName(pl.playlistName);
+      setActivePlaylistId(activeId);
+    }
+    if (cloud.buckets?.length) {
+      localStorage.setItem(BUCKETS_KEY, JSON.stringify(cloud.buckets));
+      setBucketOptions(cloud.buckets);
+    }
+    setPlaylistIndex(mergedIndex);
+    setSyncStatus('pull-done');
+    setTimeout(() => setSyncStatus(''), 3000);
+  }
+
+  async function handlePushToCloud() {
+    const uid = spotifyUser?.id;
+    if (!uid) return;
+    setSyncStatus('pushing');
+    const index = loadIndex();
+    await Promise.all(
+      index.map(({ id }) => {
+        const pl = loadPlaylist(id);
+        if (pl) return cloudSavePlaylist(uid, id, { ...pl, updatedAt: Date.now() });
+      })
+    );
+    await cloudSaveIndex(uid, index);
+    await cloudSaveBuckets(uid, bucketOptions);
+    setSyncStatus('push-done');
+    setTimeout(() => setSyncStatus(''), 3000);
+  }
+
+  async function handleCleanupOrphans() {
+    const uid = spotifyUser?.id;
+    if (!uid) return;
+    setSyncStatus('pushing');
+
+    // Find local index entries with no usable playlist data and remove them
+    const localIndex = loadIndex();
+    const validIndex = localIndex.filter(p => {
+      const pl = loadPlaylist(p.id);
+      return pl?.rows?.length > 0;
+    });
+    const removedIds = localIndex.filter(p => !validIndex.find(v => v.id === p.id)).map(p => p.id);
+
+    // Clean local storage
+    removedIds.forEach(id => deletePlaylistFromStorage(id));
+    setPlaylistIndex(validIndex);
+
+    // Clean Firebase: delete orphan playlist docs and update index
+    await Promise.all(removedIds.map(id => cloudDeletePlaylist(uid, id)));
+    await cloudSaveIndex(uid, validIndex);
+
+    // Also load cloud and remove any stale entries there not in validIndex
+    const cloud = await cloudLoad(uid);
+    if (cloud?.index) {
+      const validIds = new Set(validIndex.map(p => p.id));
+      const cloudOrphans = cloud.index.filter(e => !validIds.has(e.id));
+      await Promise.all(cloudOrphans.map(e => cloudDeletePlaylist(uid, e.id)));
+      if (cloudOrphans.length) await cloudSaveIndex(uid, validIndex);
+    }
+
+    // Switch away if active playlist was removed
+    if (removedIds.includes(activePlaylistId) && validIndex.length) {
+      handleSwitchPlaylist(validIndex[0].id);
+    }
+
+    setSyncStatus(removedIds.length ? 'push-done' : 'pull-empty');
+    setTimeout(() => setSyncStatus(''), 3000);
+  }
+
   function handleSaveJSON() {
     const blob = new Blob([JSON.stringify({ playlistName, rows }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -608,8 +750,11 @@ export default function App() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="#b45309">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
           </svg>
-          Spotify search is rate limited. Showing MusicBrainz results in the meantime — Spotify will resume automatically.
-          <button className="banner-dismiss" onClick={() => setSpotifyRateLimited(false)}>×</button>
+          Spotify search is rate limited. Showing MusicBrainz results in the meantime.
+          {rateLimitSecsLeft > 0
+            ? ` Spotify resumes in ${rateLimitSecsLeft}s.`
+            : ' Checking when Spotify recovers…'}
+          <button className="banner-dismiss" onClick={() => { setSpotifyRateLimited(false); setRateLimitSecsLeft(null); clearTimeout(rateLimitTimerRef.current); clearInterval(rateLimitCountdownRef.current); }}>×</button>
         </div>
       )}
 
@@ -656,6 +801,26 @@ export default function App() {
               Load JSON
               <input ref={fileInputRef} type="file" accept=".json" onChange={handleLoadJSON} style={{display:'none'}} />
             </label>
+            {spotifyUser && (<>
+              <button className="sidebar-action-btn sidebar-sync-btn" onClick={handlePullFromCloud} disabled={syncStatus === 'pulling' || syncStatus === 'pushing'}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+                {syncStatus === 'pulling' ? 'Pulling…' : syncStatus === 'pull-done' ? '✓ Pulled' : syncStatus === 'pull-empty' ? 'Nothing in cloud' : 'Pull from cloud'}
+              </button>
+              <button className="sidebar-action-btn sidebar-sync-btn" onClick={handlePushToCloud} disabled={syncStatus === 'pulling' || syncStatus === 'pushing'}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                </svg>
+                {syncStatus === 'pushing' ? 'Pushing…' : syncStatus === 'push-done' ? '✓ Pushed' : 'Push to cloud'}
+              </button>
+              <button className="sidebar-action-btn sidebar-sync-btn sidebar-cleanup-btn" onClick={handleCleanupOrphans} disabled={syncStatus === 'pulling' || syncStatus === 'pushing'}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                </svg>
+                {syncStatus === 'pushing' ? 'Cleaning…' : 'Remove empty playlists'}
+              </button>
+            </>)}
           </div>
         </aside>
 

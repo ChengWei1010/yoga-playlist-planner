@@ -1071,6 +1071,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   padding: 8px 12px;
   background: var(--brand-xlight);
   border: 1px solid var(--brand-light);
@@ -1085,6 +1086,12 @@ body {
   font-family: inherit;
 }
 .sidebar-action-btn:hover { background: var(--brand-light); }
+.sidebar-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.sidebar-sync-btn { color: #1a5f9e; }
+.sidebar-sync-btn:hover { background: #dbeeff; }
+.sidebar-cleanup-btn { color: #991b1b; }
+.sidebar-cleanup-btn:hover { background: #fee2e2; border-color: #fca5a5; }
 
 .sidebar-load-label {
   display: flex;
