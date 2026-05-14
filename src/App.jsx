@@ -18,7 +18,7 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
 import { SortableRow } from './SortableRow';
 import { defaultRows, parseSongMin, formatTotalTime, BUCKET_COLORS } from './data';
-import { startLogin, handleCallback, getToken, logout, getSpotifyUser, fetchPlaylist, msToMinSec, checkSpotifyAvailable } from './spotify';
+import { startLogin, handleCallback, getToken, logout, getSpotifyUser, fetchPlaylist, msToMinSec } from './spotify';
 import { cloudLoad, cloudSavePlaylist, cloudSaveIndex, cloudDeletePlaylist, cloudSaveBuckets } from './firebase';
 import './App.css';
 

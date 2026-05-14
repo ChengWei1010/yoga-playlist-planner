@@ -1,0 +1,170 @@
+{
+  "playlistName": "45 mins sculpt for NYC",
+  "rows": [
+    {
+      "id": "nyc1",
+      "bucket": "Intro",
+      "bucketTime": "",
+      "song": "Opening Titles (From The Motion Picture)",
+      "songMin": "1:34",
+      "posture": "",
+      "status": "confirmed",
+      "trackArtists": "Craig Armstrong",
+      "isBucketHeader": true
+    },
+    {
+      "id": "nyc2",
+      "bucket": "Integration",
+      "bucketTime": "",
+      "song": "gummy bears",
+      "songMin": "2:01",
+      "posture": "",
+      "status": "confirmed",
+      "trackArtists": "bad at math.",
+      "isBucketHeader": true
+    },
+    {
+      "id": "nyc3",
+      "bucket": "Sun A",
+      "bucketTime": "",
+      "song": "Rockstar",
+      "songMin": "3:03",
+      "posture": "",
+      "status": "confirmed",
+      "trackArtists": "HYBS",
+      "isBucketHeader": true
+    },
+    {
+      "id": "nyc4",
+      "bucket": "",
+      "bucketTime": "",
+      "song": "Life feels so good",
+      "songMin": "3:10",
+      "posture": "",
+      "status": "confirmed",
+      "trackArtists": "Soft Index",
+      "isBucketHeader": false
+    },
+    {
+      "id": "nyc5",
+      "bucket": "Sun B",
+      "bucketTime": "",
+      "song": "On The Ground",
+      "songMin": "2:14",
+      "posture": "",
+      "status": "confirmed",
+      "trackArtists": "oskar med k",
+      "isBucketHeader": true
+    },
+    {
+      "id": "nyc6",
+      "bucket": "Core",
+      "bucketTime": "",
+      "song": "Losing It",
+      "songMin": "4:08",
+      "posture": "",
+      "status": "confirmed",
+      "trackArtists": "FISHER",
+      "isBucketHeader": true
+    },
+    {
+      "id": "nyc7",
+      "bucket": "Cardio",
+      "bucketTime": "",
+      "song": "Move To Da Bass",
+      "songMin": "2:29",
+      "posture": "",
+      "status": "confirmed",
+      "trackArtists": "PROMI5E",
+      "isBucketHeader": true
+    },
+    {
+      "id": "nyc8",
+      "bucket": "Squat",
+      "bucketTime": "",
+      "song": "Jammin",
+      "songMin": "2:50",
+      "posture": "",
+      "status": "confirmed",
+      "trackArtists": "RUBII",
+      "isBucketHeader": true
+    },
+    {
+      "id": "nyc9",
+      "bucket": "Sun B",
+      "bucketTime": "",
+      "song": "Dive Into Me",
+      "songMin": "2:46",
+      "posture": "Goddess pose",
+      "status": "confirmed",
+      "trackArtists": "Alok, Khalid",
+      "isBucketHeader": true
+    },
+    {
+      "id": "nyc10",
+      "bucket": "",
+      "bucketTime": "",
+      "song": "Satisfy",
+      "songMin": "3:07",
+      "posture": "",
+      "status": "confirmed",
+      "trackArtists": "Calvin Harris, Jazzy",
+      "isBucketHeader": false
+    },
+    {
+      "id": "nyc11",
+      "bucket": "Cardio",
+      "bucketTime": "",
+      "song": "NUEVAYoL",
+      "songMin": "3:04",
+      "posture": "",
+      "status": "confirmed",
+      "trackArtists": "Bad Bunny",
+      "isBucketHeader": true
+    },
+    {
+      "id": "nyc12",
+      "bucket": "Balance",
+      "bucketTime": "",
+      "song": "Baby Blue",
+      "songMin": "2:30",
+      "posture": "Sit",
+      "status": "confirmed",
+      "trackArtists": "Jocelyn 9.4.0",
+      "isBucketHeader": true
+    },
+    {
+      "id": "nyc13",
+      "bucket": "Cool down",
+      "bucketTime": "",
+      "song": "Daisies - Piano Version",
+      "songMin": "2:47",
+      "posture": "",
+      "status": "confirmed",
+      "trackArtists": "Linneo",
+      "isBucketHeader": true
+    },
+    {
+      "id": "nyc14",
+      "bucket": "",
+      "bucketTime": "",
+      "song": "Afterlight",
+      "songMin": "4:26",
+      "posture": "",
+      "status": "confirmed",
+      "trackArtists": "Carl Borg",
+      "isBucketHeader": false
+    },
+    {
+      "id": "nyc15",
+      "bucket": "Savasana",
+      "bucketTime": "",
+      "song": "Don't Go Where I Can't Find You",
+      "songMin": "4:54",
+      "posture": "",
+      "status": "confirmed",
+      "trackArtists": "Eraldo Bernocchi, Harold Budd, Robin Guthrie",
+      "isBucketHeader": true
+    }
+  ]
+}
