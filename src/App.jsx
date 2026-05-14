@@ -504,13 +504,10 @@ export default function App() {
       return lines;
     }
 
-    // Playlist name label
-    ctx.font = '500 22px -apple-system, BlinkMacSystemFont, sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.fillText(playlistName.toUpperCase(), PAD_X, TOP_SAFE - 28);
+    // Playlist name label removed
 
-    const BUCKET_FONT = '700 22px -apple-system, BlinkMacSystemFont, sans-serif';
-    const POSTURE_FONT = '500 18px -apple-system, BlinkMacSystemFont, sans-serif';
+    const BUCKET_FONT = '700 28px -apple-system, BlinkMacSystemFont, sans-serif';
+    const POSTURE_FONT = '500 23px -apple-system, BlinkMacSystemFont, sans-serif';
 
     let y = TOP_SAFE;
     for (const group of groups) {
@@ -524,7 +521,7 @@ export default function App() {
       ctx.font = BUCKET_FONT;
       ctx.fillStyle = '#ffffff';
       ctx.fillText(group.bucket, PAD_X + 22, y);
-      y += 34;
+      y += 42;
       // Postures
       for (const posture of group.postures) {
         for (const seg of posture.split('\n')) {
@@ -535,11 +532,11 @@ export default function App() {
             ctx.font = POSTURE_FONT;
             ctx.fillStyle = 'rgba(255,255,255,0.82)';
             ctx.fillText(line, PAD_X + 22, y);
-            y += 26;
+            y += 32;
           }
         }
       }
-      y += 18;
+      y += 22;
     }
 
     canvas.toBlob(blob => {
