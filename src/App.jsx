@@ -541,11 +541,7 @@ export default function App() {
 
     canvas.toBlob(blob => {
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${playlistName.replace(/[^a-z0-9]/gi, '_')}_lockscreen.png`;
-      a.click();
-      URL.revokeObjectURL(url);
+      window.open(url, '_blank');
     }, 'image/png');
   }
 
