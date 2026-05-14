@@ -18,7 +18,7 @@ import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
 import { SortableRow } from './SortableRow';
 import { defaultRows, parseSongMin, formatTotalTime, BUCKET_COLORS } from './data';
-import { startLogin, handleCallback, getToken, logout, getSpotifyUser, fetchPlaylist, msToMinSec } from './spotify';
+import { startLogin, handleCallback, getToken, logout, getSpotifyUser, fetchPlaylist, msToMinSec, checkSpotifyAvailable } from './spotify';
 import { cloudLoad, cloudSavePlaylist, cloudSaveIndex, cloudDeletePlaylist, cloudSaveBuckets } from './firebase';
 import './App.css';
 
@@ -318,7 +318,15 @@ export default function App() {
   function handleRateLimit() {
     setSpotifyRateLimited(true);
     clearTimeout(rateLimitTimerRef.current);
-    rateLimitTimerRef.current = setTimeout(() => setSpotifyRateLimited(false), 60000);
+    // Poll every 30s until Spotify accepts a request again
+    function probe() {
+      rateLimitTimerRef.current = setTimeout(async () => {
+        const ok = await checkSpotifyAvailable(token);
+        if (ok) setSpotifyRateLimited(false);
+        else probe();
+      }, 30000);
+    }
+    probe();
   }
 
   function handleLogout() {
@@ -600,7 +608,7 @@ export default function App() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="#b45309">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
           </svg>
-          Spotify search is temporarily rate limited. Results will resume in ~1 minute.
+          Spotify search is rate limited. Showing MusicBrainz results in the meantime — Spotify will resume automatically.
           <button className="banner-dismiss" onClick={() => setSpotifyRateLimited(false)}>×</button>
         </div>
       )}

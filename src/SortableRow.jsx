@@ -147,7 +147,15 @@ export function SortableRow({ row, index, token, isContinuation, parentBucket, b
                 token={token}
                 closeDropdown={isDraggingList}
                 onSelect={handleTrackSelect}
-                onChangeDirect={v => onUpdate(row.id, 'song', v)}
+                onChangeDirect={v => {
+                  onUpdate(row.id, 'song', v);
+                  if (!v) {
+                    onUpdate(row.id, 'songMin', '');
+                    onUpdate(row.id, 'trackArtists', '');
+                    onUpdate(row.id, 'spotifyUri', '');
+                    onUpdate(row.id, 'previewUrl', null);
+                  }
+                }}
                 onRateLimit={onRateLimit}
               />
               {row.trackArtists && (

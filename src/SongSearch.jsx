@@ -6,6 +6,7 @@ import { searchMusicBrainz } from './musicbrainz';
 export function SongSearch({ value, token, closeDropdown, onSelect, onChangeDirect, onRateLimit }) {
   const [query, setQuery] = useState(value || '');
   const [results, setResults] = useState([]);
+  const [resultSource, setResultSource] = useState('spotify');
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0, above: false });
@@ -60,12 +61,26 @@ export function SongSearch({ value, token, closeDropdown, onSelect, onChangeDire
       }
       if (controller.signal.aborted) return;
       if (tracks === null) {
-        setLoading(false);
+        // Spotify rate limited — fall back to MusicBrainz
         onRateLimit?.();
+        try {
+          const fallback = await searchMusicBrainz(query, controller.signal);
+          if (controller.signal.aborted) return;
+          if (fallback?.length > 0) {
+            setResults(fallback);
+            setResultSource('musicbrainz');
+            setLoading(false);
+            calcDropPos();
+            setOpen(true);
+            return;
+          }
+        } catch {}
+        setLoading(false);
         if (results.length > 0 && isFocusedRef.current) setOpen(true);
         return;
       }
       setResults(tracks || []);
+      setResultSource(token ? 'spotify' : 'musicbrainz');
       setLoading(false);
       if (tracks?.length > 0) {
         calcDropPos();
@@ -127,7 +142,7 @@ export function SongSearch({ value, token, closeDropdown, onSelect, onChangeDire
       }}
     >
       <li className="search-source-label">
-        {token ? '🎵 Spotify' : '🎵 MusicBrainz'}
+        {resultSource === 'spotify' ? '🎵 Spotify' : '🎵 MusicBrainz'}
       </li>
       {results.map(track => (
         <li

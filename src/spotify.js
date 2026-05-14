@@ -89,26 +89,74 @@ export function logout() {
   localStorage.removeItem(EXPIRY_KEY);
 }
 
+// Search result cache: query → { tracks, expiresAt }
+const searchCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_MAX = 50;
+
+// In-flight dedup: query → Promise
+const inflight = new Map();
+
 export async function searchTracks(query, token) {
   if (!query || query.length < 2) return [];
-  const params = new URLSearchParams({ q: query, type: 'track', limit: 8 });
-  const res = await fetch(`https://api.spotify.com/v1/search?${params}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) {
-    if (res.status === 429) return null; // rate limited — caller keeps existing results
-    return [];
+
+  const cacheKey = query.toLowerCase().trim();
+
+  // Return cached result if still fresh
+  const cached = searchCache.get(cacheKey);
+  if (cached && Date.now() < cached.expiresAt) return cached.tracks;
+
+  // Reuse in-flight request for the same query
+  if (inflight.has(cacheKey)) return inflight.get(cacheKey);
+
+  const promise = (async () => {
+    const params = new URLSearchParams({ q: query, type: 'track', limit: 8 });
+    const res = await fetch(`https://api.spotify.com/v1/search?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      if (res.status === 429) return null;
+      return [];
+    }
+    const data = await res.json();
+    const tracks = (data.tracks?.items || []).map(t => ({
+      id: t.id,
+      name: t.name,
+      artists: t.artists.map(a => a.name).join(', '),
+      duration_ms: t.duration_ms,
+      albumArt: t.album.images[2]?.url || t.album.images[0]?.url,
+      uri: t.uri,
+      previewUrl: t.preview_url || null,
+    }));
+
+    // Cache successful results
+    if (tracks !== null) {
+      if (searchCache.size >= CACHE_MAX) {
+        searchCache.delete(searchCache.keys().next().value);
+      }
+      searchCache.set(cacheKey, { tracks, expiresAt: Date.now() + CACHE_TTL });
+    }
+
+    return tracks;
+  })();
+
+  inflight.set(cacheKey, promise);
+  promise.finally(() => inflight.delete(cacheKey));
+
+  return promise;
+}
+
+export async function checkSpotifyAvailable(token) {
+  if (!token) return false;
+  try {
+    const res = await fetch(
+      'https://api.spotify.com/v1/search?q=yoga&type=track&limit=1',
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return res.status !== 429;
+  } catch {
+    return false;
   }
-  const data = await res.json();
-  return (data.tracks?.items || []).map(t => ({
-    id: t.id,
-    name: t.name,
-    artists: t.artists.map(a => a.name).join(', '),
-    duration_ms: t.duration_ms,
-    albumArt: t.album.images[2]?.url || t.album.images[0]?.url,
-    uri: t.uri,
-    previewUrl: t.preview_url || null,
-  }));
 }
 
 export async function getSpotifyUser(token) {
