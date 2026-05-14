@@ -423,31 +423,19 @@ export default function App() {
     const cloud = await cloudLoad(uid);
     if (!cloud?.index?.length) { setSyncStatus('pull-empty'); return; }
 
-    // Only pull playlists that exist in the cloud index AND are newer than local.
-    // Never resurrect playlists that were deleted locally after the last push.
-    const localIndex = loadIndex();
-    const localIds = new Set(localIndex.map(p => p.id));
-
-    // For a manual pull we trust cloud fully — but exclude ids that exist locally
-    // with a newer updatedAt (user just edited them and hasn't pushed yet).
+    // Full replace — manual pull trusts cloud completely
     cloud.index.forEach(({ id }) => {
       const cloudPl = cloud.playlists?.[id];
-      if (!cloudPl) return;
-      const localRaw = localStorage.getItem(`yoga_planner_playlist_${id}`);
-      const localPl = localRaw ? JSON.parse(localRaw) : null;
-      // Only overwrite if cloud is newer or local doesn't exist
-      if (!localPl || (cloudPl.updatedAt || 0) >= (localPl.updatedAt || 0)) {
-        localStorage.setItem(`yoga_planner_playlist_${id}`, JSON.stringify(cloudPl));
-      }
+      if (cloudPl) localStorage.setItem(`yoga_planner_playlist_${id}`, JSON.stringify(cloudPl));
     });
-
-    // Merge index: keep local entries (including deletions), add cloud entries not present locally
-    const cloudOnlyEntries = cloud.index.filter(e => !localIds.has(e.id));
-    const mergedIndex = [...localIndex, ...cloudOnlyEntries];
-    localStorage.setItem('yoga_planner_index', JSON.stringify(mergedIndex));
+    // Remove any local playlists not in the cloud index
+    loadIndex().forEach(({ id }) => {
+      if (!cloud.index.find(e => e.id === id)) deletePlaylistFromStorage(id);
+    });
+    localStorage.setItem('yoga_planner_index', JSON.stringify(cloud.index));
 
     const currentActiveId = localStorage.getItem('yoga_planner_active');
-    const activeId = mergedIndex.find(p => p.id === currentActiveId)?.id ?? mergedIndex[0]?.id;
+    const activeId = cloud.index.find(p => p.id === currentActiveId)?.id ?? cloud.index[0]?.id;
     if (!activeId) { setSyncStatus('pull-done'); setTimeout(() => setSyncStatus(''), 3000); return; }
     localStorage.setItem('yoga_planner_active', activeId);
     const pl = JSON.parse(localStorage.getItem(`yoga_planner_playlist_${activeId}`) || 'null');
@@ -461,7 +449,7 @@ export default function App() {
       localStorage.setItem(BUCKETS_KEY, JSON.stringify(cloud.buckets));
       setBucketOptions(cloud.buckets);
     }
-    setPlaylistIndex(mergedIndex);
+    setPlaylistIndex(cloud.index);
     setSyncStatus('pull-done');
     setTimeout(() => setSyncStatus(''), 3000);
   }
