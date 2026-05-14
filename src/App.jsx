@@ -62,7 +62,7 @@ function loadPlaylist(id) {
   try { return JSON.parse(localStorage.getItem(`yoga_planner_playlist_${id}`)); } catch { return null; }
 }
 function savePlaylistToStorage(id, rows, playlistName) {
-  localStorage.setItem(`yoga_planner_playlist_${id}`, JSON.stringify({ rows, playlistName }));
+  localStorage.setItem(`yoga_planner_playlist_${id}`, JSON.stringify({ rows, playlistName, updatedAt: Date.now() }));
   const index = loadIndex();
   const existing = index.find(p => p.id === id);
   if (existing) { existing.name = playlistName; existing.updatedAt = Date.now(); }
@@ -199,7 +199,7 @@ export default function App() {
     }
   }, []);
 
-  // Fetch user profile once we have a token; load cloud data on login
+  // Fetch user profile once we have a token; merge cloud data on login (cloud wins only if newer)
   useEffect(() => {
     if (!token) { setSpotifyUser(null); return; }
     getSpotifyUser(token).then(async u => {
@@ -207,27 +207,46 @@ export default function App() {
       if (!u?.id) return;
       const cloud = await cloudLoad(u.id);
       if (!cloud?.index?.length) return;
+
+      const localIndex = loadIndex();
+
+      // Merge: for each playlist, keep whichever version (local or cloud) is newer
       cloud.index.forEach(({ id }) => {
-        const pl = cloud.playlists?.[id];
-        if (pl) localStorage.setItem(`yoga_planner_playlist_${id}`, JSON.stringify({ rows: pl.rows, playlistName: pl.playlistName }));
+        const cloudPl = cloud.playlists?.[id];
+        if (!cloudPl) return;
+        const localRaw = localStorage.getItem(`yoga_planner_playlist_${id}`);
+        const localPl = localRaw ? JSON.parse(localRaw) : null;
+        // Keep cloud only if local doesn't exist, or local has a timestamp and cloud is newer
+        const cloudNewer = !localPl || (localPl.updatedAt !== undefined && (cloudPl.updatedAt || 0) > localPl.updatedAt);
+        if (cloudNewer) {
+          localStorage.setItem(`yoga_planner_playlist_${id}`, JSON.stringify({ rows: cloudPl.rows, playlistName: cloudPl.playlistName, updatedAt: cloudPl.updatedAt }));
+        }
       });
-      localStorage.setItem('yoga_planner_index', JSON.stringify(cloud.index));
+
+      // Add any playlists from cloud that don't exist locally
+      const localIds = new Set(localIndex.map(p => p.id));
+      const mergedIndex = [...localIndex];
+      cloud.index.forEach(entry => {
+        if (!localIds.has(entry.id)) mergedIndex.push(entry);
+      });
+      localStorage.setItem('yoga_planner_index', JSON.stringify(mergedIndex));
+
       const currentId = localStorage.getItem('yoga_planner_active');
-      const activeId = cloud.index.find(p => p.id === currentId)?.id ?? cloud.index[0]?.id;
+      const activeId = mergedIndex.find(p => p.id === currentId)?.id ?? mergedIndex[0]?.id;
       if (!activeId) return;
       localStorage.setItem('yoga_planner_active', activeId);
-      const pl = cloud.playlists?.[activeId];
-      if (pl) {
-        recalcNextId(pl.rows);
-        setRows(pl.rows);
-        setPlaylistName(pl.playlistName);
+      const activePl = JSON.parse(localStorage.getItem(`yoga_planner_playlist_${activeId}`) || 'null');
+      if (activePl) {
+        recalcNextId(activePl.rows);
+        setRows(activePl.rows);
+        setPlaylistName(activePl.playlistName);
         setActivePlaylistId(activeId);
       }
       if (cloud.buckets?.length) {
         localStorage.setItem(BUCKETS_KEY, JSON.stringify(cloud.buckets));
         setBucketOptions(cloud.buckets);
       }
-      setPlaylistIndex(cloud.index);
+      setPlaylistIndex(mergedIndex);
     });
   }, [token]);
 

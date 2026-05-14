@@ -1,0 +1,159 @@
+{
+  "playlistName": "Good Night Yoga",
+  "rows": [
+    {
+      "id": "gny1",
+      "bucket": "Intro",
+      "bucketTime": "",
+      "song": "Oxygen Bar",
+      "songMin": "5:32",
+      "posture": "Body scan",
+      "status": "confirmed",
+      "trackArtists": "Deep Divers",
+      "isBucketHeader": true
+    },
+    {
+      "id": "gny2",
+      "bucket": "Stretch (Seated)",
+      "bucketTime": "",
+      "song": "Moving",
+      "songMin": "2:33",
+      "posture": "Seated twist",
+      "status": "confirmed",
+      "trackArtists": "Eskimotion",
+      "isBucketHeader": true
+    },
+    {
+      "id": "gny3",
+      "bucket": "",
+      "bucketTime": "",
+      "song": "Pink Preludes: Prelude in C Major (For Tablets)",
+      "songMin": "2:44",
+      "posture": "Seated moon",
+      "status": "confirmed",
+      "trackArtists": "Dustin Gledhill",
+      "isBucketHeader": false
+    },
+    {
+      "id": "gny4",
+      "bucket": "Integration",
+      "bucketTime": "",
+      "song": "Tranquil",
+      "songMin": "3:27",
+      "posture": "Child pose - center, arm left right.",
+      "status": "confirmed",
+      "trackArtists": "Oceans Cry",
+      "isBucketHeader": true
+    },
+    {
+      "id": "gny5",
+      "bucket": "",
+      "bucketTime": "",
+      "song": "Depth of Mind",
+      "songMin": "3:38",
+      "posture": "Cat & Cow, thread the needles, one arm up",
+      "status": "confirmed",
+      "trackArtists": "Pasztore Bernadett",
+      "isBucketHeader": false
+    },
+    {
+      "id": "gny6",
+      "bucket": "Sun A",
+      "bucketTime": "",
+      "song": "patiently waiting",
+      "songMin": "1:40",
+      "posture": "Table top to downdog. Ragdoll",
+      "status": "confirmed",
+      "trackArtists": "Jason LaPierre, V. James",
+      "isBucketHeader": true
+    },
+    {
+      "id": "gny7",
+      "bucket": "",
+      "bucketTime": "",
+      "song": "bliss",
+      "songMin": "3:30",
+      "posture": "Mountain",
+      "status": "confirmed",
+      "trackArtists": "iogi",
+      "isBucketHeader": false
+    },
+    {
+      "id": "gny8",
+      "bucket": "",
+      "bucketTime": "",
+      "song": "City Lights",
+      "songMin": "2:54",
+      "posture": "Sun A flow",
+      "status": "confirmed",
+      "trackArtists": "Tatsuya Maruyama",
+      "isBucketHeader": false
+    },
+    {
+      "id": "gny9",
+      "bucket": "Stretch (Belly)",
+      "bucketTime": "",
+      "song": "Paoakalani",
+      "songMin": "3:27",
+      "posture": "From downdog to belly down",
+      "status": "confirmed",
+      "trackArtists": "Kohala",
+      "isBucketHeader": true
+    },
+    {
+      "id": "gny10",
+      "bucket": "",
+      "bucketTime": "",
+      "song": "Hivon",
+      "songMin": "2:42",
+      "posture": "Frog",
+      "status": "draft",
+      "trackArtists": "Xaverius Love",
+      "isBucketHeader": false
+    },
+    {
+      "id": "gny11",
+      "bucket": "Stretch (Seated)",
+      "bucketTime": "",
+      "song": "River Flows in You - Canon in D",
+      "songMin": "3:43",
+      "posture": "Leg wide stretch",
+      "status": "draft",
+      "trackArtists": "Paul Hankinson Covers",
+      "isBucketHeader": true
+    },
+    {
+      "id": "gny12",
+      "bucket": "",
+      "bucketTime": "",
+      "song": "Yin Yoga II",
+      "songMin": "12:20",
+      "posture": "Swan, Pigeon",
+      "status": "confirmed",
+      "trackArtists": "Ryan Richko",
+      "isBucketHeader": false
+    },
+    {
+      "id": "gny13",
+      "bucket": "Stretch (Back)",
+      "bucketTime": "",
+      "song": "Dream 3 (in the midst of my life)",
+      "songMin": "10:04",
+      "posture": "Figure 4 stretch. Twist. Happy baby",
+      "status": "confirmed",
+      "trackArtists": "Max Richter, Ben Russell, Yuki Numata Resnick",
+      "isBucketHeader": true
+    },
+    {
+      "id": "gny14",
+      "bucket": "Savasana",
+      "bucketTime": "",
+      "song": "The Sounds of Nature",
+      "songMin": "3:04",
+      "posture": "https://yinyoga.com/yinyinsights/yin-yoga-asanas/",
+      "status": "confirmed",
+      "trackArtists": "Forest Walks",
+      "isBucketHeader": true
+    }
+  ]
+}

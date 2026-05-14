@@ -1238,6 +1238,8 @@ body {
   padding: 5px 7px;
   font-size: 13.5px;
   color: var(--text);
+  white-space: normal;
+  word-break: break-word;
 }
 .view-posture {
   white-space: pre-wrap;
