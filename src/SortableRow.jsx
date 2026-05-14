@@ -10,7 +10,7 @@ const BUCKET_OPTIONS = [
   'Squat', 'Balance', 'Hip', 'Cool down', 'Surrender', 'Savasana', 'Ending',
 ];
 
-export function SortableRow({ row, index, token, isContinuation, parentBucket, bucketTotalTime, bucketOptions, isDraggingList, onUpdate, onDelete, onAddBelow, onAddSongToBucket, viewMode }) {
+export function SortableRow({ row, index, token, isContinuation, parentBucket, bucketTotalTime, bucketOptions, isDraggingList, onUpdate, onDelete, onAddBelow, onAddSongToBucket, onRateLimit, viewMode }) {
   const {
     attributes,
     listeners,
@@ -148,6 +148,7 @@ export function SortableRow({ row, index, token, isContinuation, parentBucket, b
                 closeDropdown={isDraggingList}
                 onSelect={handleTrackSelect}
                 onChangeDirect={v => onUpdate(row.id, 'song', v)}
+                onRateLimit={onRateLimit}
               />
               {row.trackArtists && (
                 <span className="row-artists">{row.trackArtists}</span>

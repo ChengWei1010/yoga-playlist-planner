@@ -72,7 +72,7 @@ function savePlaylistToStorage(id, rows, playlistName) {
   const index = loadIndex();
   const existing = index.find(p => p.id === id);
   if (existing) { existing.name = playlistName; existing.updatedAt = Date.now(); }
-  else index.push({ id, name: playlistName, updatedAt: Date.now() });
+  else index.push({ id, name: playlistName, createdAt: Date.now(), updatedAt: Date.now() });
   localStorage.setItem('yoga_planner_index', JSON.stringify(index));
 }
 function deletePlaylistFromStorage(id) {
@@ -177,6 +177,8 @@ export default function App() {
   const [bucketDraft, setBucketDraft] = useState([]);
   const [newBucketName, setNewBucketName] = useState('');
   const [viewMode, setViewMode] = useState(false);
+  const [spotifyRateLimited, setSpotifyRateLimited] = useState(false);
+  const rateLimitTimerRef = useRef(null);
   const fileInputRef = useRef(null);
   const cloudSaveRef = useRef(null);
 
@@ -311,6 +313,12 @@ export default function App() {
 
   function handleAddRow() {
     setRows(prev => [...prev, { id: String(++nextId), bucket: '', bucketTime: '', song: '', songMin: '', posture: '', status: 'draft', isBucketHeader: true }]);
+  }
+
+  function handleRateLimit() {
+    setSpotifyRateLimited(true);
+    clearTimeout(rateLimitTimerRef.current);
+    rateLimitTimerRef.current = setTimeout(() => setSpotifyRateLimited(false), 60000);
   }
 
   function handleLogout() {
@@ -452,99 +460,6 @@ export default function App() {
     setShowResetConfirm(false);
   }
 
-  // ─── Lock screen export ───
-  const CANVAS_ACCENT = {
-    blue:   '#5ba8f5',
-    orange: '#f59342',
-    pink:   '#f472b6',
-    yellow: '#fbbf24',
-    purple: '#a78bfa',
-    teal:   '#2dd4bf',
-  };
-
-  function handleDownloadLockScreen() {
-    const W = 1179, H = 2556;
-    const canvas = document.createElement('canvas');
-    canvas.width = W;
-    canvas.height = H;
-    const ctx = canvas.getContext('2d');
-
-    ctx.fillStyle = '#0d0d14';
-    ctx.fillRect(0, 0, W, H);
-
-    const PAD_X = 135;
-    const TOP_SAFE = 720;  // just below clock (~28% down)
-    const BOT_SAFE = 1590; // just above music widget (~62% down)
-    const contentW = W - PAD_X * 2;
-
-    // Group rows by bucket
-    const groups = [];
-    rows.forEach(row => {
-      const posture = row.posture?.trim();
-      if (row.isBucketHeader) {
-        const bucketDef = bucketOptions.find(b => b.name === row.bucket);
-        const color = bucketDef?.color ? (CANVAS_ACCENT[bucketDef.color] || 'rgba(255,255,255,0.6)') : 'rgba(255,255,255,0.6)';
-        groups.push({ bucket: row.bucket || '—', color, postures: posture ? [posture] : [] });
-      } else if (groups.length && posture) {
-        groups[groups.length - 1].postures.push(posture);
-      }
-    });
-
-    function wrapText(text, maxW, font) {
-      ctx.font = font;
-      const words = text.split(/\s+/);
-      const lines = [];
-      let line = '';
-      for (const word of words) {
-        const test = line ? line + ' ' + word : word;
-        if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = word; }
-        else line = test;
-      }
-      if (line) lines.push(line);
-      return lines;
-    }
-
-    // Playlist name label removed
-
-    const BUCKET_FONT = '700 28px -apple-system, BlinkMacSystemFont, sans-serif';
-    const POSTURE_FONT = '500 23px -apple-system, BlinkMacSystemFont, sans-serif';
-
-    let y = TOP_SAFE;
-    for (const group of groups) {
-      if (y >= BOT_SAFE) break;
-      // Colored dot
-      ctx.beginPath();
-      ctx.arc(PAD_X + 6, y - 7, 5, 0, Math.PI * 2);
-      ctx.fillStyle = group.color;
-      ctx.fill();
-      // Bucket name
-      ctx.font = BUCKET_FONT;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(group.bucket, PAD_X + 22, y);
-      y += 42;
-      // Postures
-      for (const posture of group.postures) {
-        for (const seg of posture.split('\n')) {
-          const trimmed = seg.trim();
-          if (!trimmed) continue;
-          for (const line of wrapText(trimmed, contentW - 24, POSTURE_FONT)) {
-            if (y >= BOT_SAFE) break;
-            ctx.font = POSTURE_FONT;
-            ctx.fillStyle = 'rgba(255,255,255,0.82)';
-            ctx.fillText(line, PAD_X + 22, y);
-            y += 32;
-          }
-        }
-      }
-      y += 22;
-    }
-
-    canvas.toBlob(blob => {
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-    }, 'image/png');
-  }
-
   // ─── Bucket manager ───
   function handleOpenBucketModal() {
     setBucketDraft(bucketOptions.map(b => ({ ...b })));
@@ -621,27 +536,21 @@ export default function App() {
             <button className={`mode-btn${!viewMode ? ' mode-active' : ''}`} onClick={() => setViewMode(false)}>Edit</button>
             <button className={`mode-btn${viewMode ? ' mode-active' : ''}`} onClick={() => setViewMode(true)}>View</button>
           </div>
-          {viewMode && (
-            <button className="lockscreen-btn" onClick={handleDownloadLockScreen} title="Download as iPhone lock screen">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.5" strokeWidth="2.5"/>
-              </svg>
-              Download as image
-            </button>
-          )}
           <button className="gear-btn" onClick={handleOpenBucketModal} title="Manage buckets">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
             </svg>
           </button>
           {!viewMode && <button className="reset-btn" onClick={() => setShowResetConfirm(true)}>Reset</button>}
-          <button className="import-btn" onClick={() => { setShowImportModal(true); setImportError(''); setImportUrl(''); }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            Import
-          </button>
-          {token && (
+          {!viewMode && (
+            <button className="import-btn" onClick={() => { setShowImportModal(true); setImportError(''); setImportUrl(''); }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Import
+            </button>
+          )}
+          {token && !viewMode && (
             <button className="export-btn" onClick={handleExport}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 5 17 10"/><line x1="12" y1="5" x2="12" y2="17"/>
@@ -686,6 +595,16 @@ export default function App() {
         </div>
       )}
 
+      {spotifyRateLimited && token && (
+        <div className="spotify-banner rate-limit-banner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#b45309">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+          </svg>
+          Spotify search is temporarily rate limited. Results will resume in ~1 minute.
+          <button className="banner-dismiss" onClick={() => setSpotifyRateLimited(false)}>×</button>
+        </div>
+      )}
+
       <div className="app-body">
         {/* ─── Sidebar ─── */}
         {showSidebar && <div className="sidebar-backdrop" onClick={() => setShowSidebar(false)} />}
@@ -702,7 +621,7 @@ export default function App() {
             New Playlist
           </button>
           <ul className="sidebar-list">
-            {[...playlistIndex].sort((a, b) => b.updatedAt - a.updatedAt).map(p => (
+            {[...playlistIndex].sort((a, b) => (a.createdAt || Number(a.id)) - (b.createdAt || Number(b.id))).map(p => (
               <li
                 key={p.id}
                 className={`sidebar-item${p.id === activePlaylistId ? ' active' : ''}`}
@@ -800,6 +719,7 @@ export default function App() {
                         onDelete={handleDelete}
                         onAddBelow={handleAddBelow}
                         onAddSongToBucket={handleAddSongToBucket}
+                        onRateLimit={handleRateLimit}
                         viewMode={viewMode}
                       />
                     );

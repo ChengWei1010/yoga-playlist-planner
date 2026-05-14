@@ -1,28 +1,41 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { searchTracks, msToMinSec } from './spotify';
 import { searchMusicBrainz } from './musicbrainz';
 
-export function SongSearch({ value, token, closeDropdown, onSelect, onChangeDirect }) {
+export function SongSearch({ value, token, closeDropdown, onSelect, onChangeDirect, onRateLimit }) {
   const [query, setQuery] = useState(value || '');
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [dropUp, setDropUp] = useState(false);
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 0, above: false });
   const debounceRef = useRef(null);
   const abortRef = useRef(null);
   const containerRef = useRef(null);
   const inputRef = useRef(null);
   const isFocusedRef = useRef(false);
 
-  // Only sync external value when not focused (e.g. playlist switch, row reset)
   useEffect(() => {
     if (!isFocusedRef.current) setQuery(value || '');
   }, [value]);
 
   useEffect(() => { if (closeDropdown) setOpen(false); }, [closeDropdown]);
 
+  function calcDropPos() {
+    const rect = inputRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const above = spaceBelow < 280;
+    setDropPos({
+      top: above ? rect.top - 4 : rect.bottom + 4,
+      left: rect.left,
+      width: Math.max(rect.width, 320),
+      above,
+    });
+  }
+
   useEffect(() => {
-    if (query.length < 2) {
+    if (query.length < 3) {
       clearTimeout(debounceRef.current);
       abortRef.current?.abort();
       setLoading(false);
@@ -47,20 +60,18 @@ export function SongSearch({ value, token, closeDropdown, onSelect, onChangeDire
       }
       if (controller.signal.aborted) return;
       if (tracks === null) {
-        // Rate limited — keep existing results and open dropdown if we have any
         setLoading(false);
+        onRateLimit?.();
         if (results.length > 0 && isFocusedRef.current) setOpen(true);
         return;
       }
       setResults(tracks || []);
       setLoading(false);
       if (tracks?.length > 0) {
-        const rect = inputRef.current?.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - (rect?.bottom ?? 0);
-        setDropUp(spaceBelow < 280);
+        calcDropPos();
         setOpen(true);
       }
-    }, 700);
+    }, 900);
     return () => { clearTimeout(debounceRef.current); };
   }, [query, token]);
 
@@ -90,7 +101,7 @@ export function SongSearch({ value, token, closeDropdown, onSelect, onChangeDire
 
   function handleFocus() {
     isFocusedRef.current = true;
-    if (results.length > 0) setOpen(true);
+    if (results.length > 0) { calcDropPos(); setOpen(true); }
   }
 
   function handleBlur() {
@@ -101,6 +112,43 @@ export function SongSearch({ value, token, closeDropdown, onSelect, onChangeDire
   }
 
   const placeholder = token ? 'Search Spotify…' : 'Type to search songs…';
+
+  const dropdown = open && createPortal(
+    <ul
+      className="search-dropdown"
+      role="listbox"
+      style={{
+        position: 'fixed',
+        top: dropPos.above ? 'auto' : dropPos.top,
+        bottom: dropPos.above ? window.innerHeight - dropPos.top : 'auto',
+        left: dropPos.left,
+        width: dropPos.width,
+        zIndex: 9999,
+      }}
+    >
+      <li className="search-source-label">
+        {token ? '🎵 Spotify' : '🎵 MusicBrainz'}
+      </li>
+      {results.map(track => (
+        <li
+          key={track.id}
+          className="search-item"
+          role="option"
+          onMouseDown={() => handleSelect(track)}
+        >
+          {track.albumArt && (
+            <img className="track-art" src={track.albumArt} alt="" width="32" height="32" />
+          )}
+          <div className="track-info">
+            <span className="track-name">{track.name}</span>
+            <span className="track-artists">{track.artists}</span>
+          </div>
+          <span className="track-dur">{msToMinSec(track.duration_ms)}</span>
+        </li>
+      ))}
+    </ul>,
+    document.body
+  );
 
   return (
     <div className="song-search" ref={containerRef}>
@@ -116,30 +164,7 @@ export function SongSearch({ value, token, closeDropdown, onSelect, onChangeDire
         autoComplete="off"
       />
       {loading && <div className="search-spinner" />}
-      {open && (
-        <ul className={`search-dropdown${dropUp ? ' drop-up' : ''}`} role="listbox">
-          <li className="search-source-label">
-            {token ? '🎵 Spotify' : '🎵 MusicBrainz'}
-          </li>
-          {results.map(track => (
-            <li
-              key={track.id}
-              className="search-item"
-              role="option"
-              onMouseDown={() => handleSelect(track)}
-            >
-              {track.albumArt && (
-                <img className="track-art" src={track.albumArt} alt="" width="32" height="32" />
-              )}
-              <div className="track-info">
-                <span className="track-name">{track.name}</span>
-                <span className="track-artists">{track.artists}</span>
-              </div>
-              <span className="track-dur">{msToMinSec(track.duration_ms)}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+      {dropdown}
     </div>
   );
 }
