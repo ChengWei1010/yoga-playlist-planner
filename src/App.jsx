@@ -161,7 +161,7 @@ export default function App() {
   const [playlistName, setPlaylistName] = useState(initialPlaylist?.playlistName ?? 'New Playlist');
   const [activePlaylistId, setActivePlaylistId] = useState(initialActiveId);
   const [playlistIndex, setPlaylistIndex] = useState(initialIndex);
-  const [showSidebar, setShowSidebar] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
   const [isDragging, setIsDragging] = useState(0);
   const [token, setToken] = useState(() => getToken());
   const [spotifyUser, setSpotifyUser] = useState(null);
@@ -178,6 +178,7 @@ export default function App() {
   const [newBucketName, setNewBucketName] = useState('');
   const [viewMode, setViewMode] = useState(false);
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 700px)').matches);
+  const [showNewPlaylistModal, setShowNewPlaylistModal] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 700px)');
@@ -205,6 +206,7 @@ export default function App() {
     cloudSaveRef.current = setTimeout(() => {
       cloudSavePlaylist(uid, activePlaylistId, { rows, playlistName, updatedAt: Date.now() });
       cloudSaveIndex(uid, loadIndex());
+      recordSync();
     }, 2000);
   }, [rows, playlistName, activePlaylistId, spotifyUser]);
 
@@ -387,7 +389,7 @@ export default function App() {
     setActivePlaylistId(id);
     localStorage.setItem('yoga_planner_active', id);
     recalcNextId(pl.rows);
-    setShowSidebar(false);
+    if (isMobile) setShowSidebar(false);
   }
 
   function handleNewPlaylist() {
@@ -399,7 +401,6 @@ export default function App() {
     setPlaylistName('New Playlist');
     setActivePlaylistId(id);
     setPlaylistIndex(loadIndex());
-    setShowSidebar(false);
   }
 
   function handleDeletePlaylist(id, e) {
@@ -426,6 +427,26 @@ export default function App() {
 
   // ─── Save / Load JSON ───
   const [syncStatus, setSyncStatus] = useState('');
+  const [lastSyncTime, setLastSyncTime] = useState(() => {
+    const t = localStorage.getItem('yoga_planner_last_sync');
+    return t ? Number(t) : null;
+  });
+
+  function recordSync() {
+    const now = Date.now();
+    setLastSyncTime(now);
+    localStorage.setItem('yoga_planner_last_sync', String(now));
+  }
+
+  function formatSyncTime(ts) {
+    if (!ts) return null;
+    const now = Date.now();
+    const diff = Math.floor((now - ts) / 1000);
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
 
   async function handlePullFromCloud() {
     const uid = spotifyUser?.id;
@@ -461,6 +482,7 @@ export default function App() {
       setBucketOptions(cloud.buckets);
     }
     setPlaylistIndex(cloud.index);
+    recordSync();
     setSyncStatus('pull-done');
     setTimeout(() => setSyncStatus(''), 3000);
   }
@@ -478,6 +500,7 @@ export default function App() {
     );
     await cloudSaveIndex(uid, index);
     await cloudSaveBuckets(uid, bucketOptions);
+    recordSync();
     setSyncStatus('push-done');
     setTimeout(() => setSyncStatus(''), 3000);
   }
@@ -681,24 +704,7 @@ export default function App() {
         </div>
 
         <div className="header-right">
-          {!isMobile && <div className="mode-toggle">
-            <button className={`mode-btn${!viewMode ? ' mode-active' : ''}`} onClick={() => setViewMode(false)}>Edit</button>
-            <button className={`mode-btn${viewMode ? ' mode-active' : ''}`} onClick={() => setViewMode(true)}>View</button>
-          </div>}
-          {!isMobile && <button className="gear-btn" onClick={handleOpenBucketModal} title="Manage buckets">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-            </svg>
-          </button>}
           {!effectiveViewMode && <button className="reset-btn" onClick={() => setShowResetConfirm(true)}>Reset</button>}
-          {!effectiveViewMode && (
-            <button className="import-btn" onClick={() => { setShowImportModal(true); setImportError(''); setImportUrl(''); }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              Import
-            </button>
-          )}
           {token && !effectiveViewMode && (
             <button className="export-btn" onClick={handleExport}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -707,31 +713,10 @@ export default function App() {
               Export URIs
             </button>
           )}
-          {token ? (
-            <div className="spotify-user">
-              {spotifyUser?.images?.[0]?.url ? (
-                <img className="spotify-avatar" src={spotifyUser.images[0].url} alt={spotifyUser.display_name} />
-              ) : (
-                <div className="spotify-avatar-fallback">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 3a3 3 0 110 6 3 3 0 010-6zm0 14.2a7.2 7.2 0 01-6-3.22c.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08a7.2 7.2 0 01-6 3.22z"/>
-                  </svg>
-                </div>
-              )}
-              <div className="spotify-user-info">
-                <span className="spotify-connected">Connected to Spotify</span>
-                <span className="spotify-name">{spotifyUser?.display_name || '…'}</span>
-              </div>
-              <button className="spotify-logout-btn" onClick={handleLogout}>Sign out</button>
-            </div>
-          ) : (
-            <button className="spotify-login-btn" onClick={startLogin}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
-              </svg>
-              Connect Spotify
-            </button>
-          )}
+          {!isMobile && <div className="mode-toggle">
+            <button className={`mode-btn${!viewMode ? ' mode-active' : ''}`} onClick={() => setViewMode(false)}>Edit</button>
+            <button className={`mode-btn${viewMode ? ' mode-active' : ''}`} onClick={() => setViewMode(true)}>View</button>
+          </div>}
         </div>
       </header>
 
@@ -768,19 +753,59 @@ export default function App() {
 
       <div className="app-body">
         {/* ─── Sidebar ─── */}
-        {showSidebar && <div className="sidebar-backdrop" onClick={() => setShowSidebar(false)} />}
         <aside className={`sidebar${showSidebar ? ' open' : ''}`}>
           <div className="sidebar-header">
-            <span className="sidebar-title">Playlists</span>
-            <button className="sidebar-close" onClick={() => setShowSidebar(false)}>×</button>
+            <div className="sidebar-title-group">
+              <span className="sidebar-title">Playlists</span>
+              {lastSyncTime && <span className="sidebar-sync-time">Synced {formatSyncTime(lastSyncTime)}</span>}
+            </div>
           </div>
-          <button className="sidebar-new-btn" onClick={handleNewPlaylist}>
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-              <line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-            New Playlist
-          </button>
+
+          <div className="sidebar-spotify-section">
+            {token ? (
+              <div className="sidebar-spotify-user">
+                {spotifyUser?.images?.[0]?.url ? (
+                  <img className="spotify-avatar" src={spotifyUser.images[0].url} alt={spotifyUser.display_name} />
+                ) : (
+                  <div className="spotify-avatar-fallback">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 3a3 3 0 110 6 3 3 0 010-6zm0 14.2a7.2 7.2 0 01-6-3.22c.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08a7.2 7.2 0 01-6 3.22z"/>
+                    </svg>
+                  </div>
+                )}
+                <div className="spotify-user-info">
+                  <span className="spotify-connected">Connected to Spotify</span>
+                  <span className="spotify-name">{spotifyUser?.display_name || '…'}</span>
+                </div>
+                <button className="spotify-logout-btn" onClick={handleLogout}>Sign out</button>
+              </div>
+            ) : (
+              <button className="spotify-login-btn sidebar-spotify-login" onClick={startLogin}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                </svg>
+                Connect Spotify
+              </button>
+            )}
+          </div>
+
+          {spotifyUser && (
+            <div className="sidebar-cloud-section">
+              <button className="sidebar-action-btn sidebar-sync-btn" onClick={handlePullFromCloud} disabled={syncStatus === 'pulling' || syncStatus === 'pushing'}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                </svg>
+                {syncStatus === 'pulling' ? 'Pulling…' : syncStatus === 'pull-done' ? '✓ Pulled' : syncStatus === 'pull-empty' ? 'Nothing in cloud' : 'Pull from cloud'}
+              </button>
+              <button className="sidebar-action-btn sidebar-sync-btn" onClick={handlePushToCloud} disabled={syncStatus === 'pulling' || syncStatus === 'pushing'}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                </svg>
+                {syncStatus === 'pushing' ? 'Pushing…' : syncStatus === 'push-done' ? '✓ Pushed' : 'Push to cloud'}
+              </button>
+            </div>
+          )}
+
           <ul className="sidebar-list">
             {[...playlistIndex].sort((a, b) => (a.createdAt || Number(a.id)) - (b.createdAt || Number(b.id))).map(p => (
               <li
@@ -795,6 +820,15 @@ export default function App() {
               </li>
             ))}
           </ul>
+
+          <button className="sidebar-new-btn" onClick={() => setShowNewPlaylistModal(true)}>
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+              <line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+            New Playlist
+          </button>
+
           <div className="sidebar-footer">
             {!isMobile && <button className="sidebar-action-btn" onClick={handleSaveJSON}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -802,38 +836,17 @@ export default function App() {
               </svg>
               Save JSON
             </button>}
-            {!isMobile && <label className="sidebar-action-btn sidebar-load-label">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 5 17 10"/><line x1="12" y1="5" x2="12" y2="17"/>
+            <input ref={fileInputRef} type="file" accept=".json" onChange={handleLoadJSON} style={{display:'none'}} />
+            <button className="sidebar-action-btn sidebar-editor-settings-btn" onClick={handleOpenBucketModal}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
               </svg>
-              Load JSON
-              <input ref={fileInputRef} type="file" accept=".json" onChange={handleLoadJSON} style={{display:'none'}} />
-            </label>}
-            {spotifyUser ? (<>
-              <button className="sidebar-action-btn sidebar-sync-btn" onClick={handlePullFromCloud} disabled={syncStatus === 'pulling' || syncStatus === 'pushing'}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-                </svg>
-                {syncStatus === 'pulling' ? 'Pulling…' : syncStatus === 'pull-done' ? '✓ Pulled' : syncStatus === 'pull-empty' ? 'Nothing in cloud' : 'Pull from cloud'}
-              </button>
-              <button className="sidebar-action-btn sidebar-sync-btn" onClick={handlePushToCloud} disabled={syncStatus === 'pulling' || syncStatus === 'pushing'}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-                </svg>
-                {syncStatus === 'pushing' ? 'Pushing…' : syncStatus === 'push-done' ? '✓ Pushed' : 'Push to cloud'}
-              </button>
-              <button className="sidebar-action-btn sidebar-sync-btn sidebar-cleanup-btn" onClick={handleCleanupOrphans} disabled={syncStatus === 'pulling' || syncStatus === 'pushing'}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
-                </svg>
-                {syncStatus === 'pushing' ? 'Cleaning…' : 'Remove empty playlists'}
-              </button>
-            </>) : (
-              <span className="sidebar-sync-hint">Connect Spotify to enable cloud sync</span>
-            )}
+              Editor Settings
+            </button>
           </div>
         </aside>
 
+        <div className="main-panel">
         <main className="table-wrapper">
           <table className="playlist-table">
             <thead>
@@ -923,29 +936,74 @@ export default function App() {
           </div>
           )}
         </main>
+
+        <footer className="app-footer">
+          <div className="footer-inner">
+            <div className="footer-label">Playlist Summary</div>
+            <div className="footer-stats">
+              <div className="stat-item">
+                <span className="stat-num">{rows.length}</span>
+                <span className="stat-desc">total songs</span>
+              </div>
+              <div className="stat-sep" />
+              <div className="stat-item">
+                <span className="stat-num">{songCount}</span>
+                <span className="stat-desc">timed songs</span>
+              </div>
+              <div className="stat-sep" />
+              <div className="stat-item highlight">
+                <span className="stat-num">{formatTotalTime(totalSeconds)}</span>
+                <span className="stat-desc">total duration</span>
+              </div>
+            </div>
+          </div>
+        </footer>
+        </div>
       </div>
 
-      <footer className="app-footer">
-        <div className="footer-inner">
-          <div className="footer-label">Playlist Summary</div>
-          <div className="footer-stats">
-            <div className="stat-item">
-              <span className="stat-num">{rows.length}</span>
-              <span className="stat-desc">total songs</span>
+      {showNewPlaylistModal && (
+        <div className="modal-overlay" onClick={() => setShowNewPlaylistModal(false)}>
+          <div className="modal new-playlist-modal" onClick={e => e.stopPropagation()}>
+            <h2 className="modal-title">New Playlist</h2>
+            <p className="modal-body">How would you like to start?</p>
+            <div className="new-playlist-options">
+              <button
+                className="new-playlist-option"
+                onClick={() => { setShowNewPlaylistModal(false); setShowImportModal(true); setImportError(''); setImportUrl(''); }}
+              >
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" className="option-icon option-icon-spotify">
+                  <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
+                </svg>
+                <span className="option-title">Import from Spotify</span>
+                <span className="option-desc">Pull tracks from an existing Spotify playlist</span>
+              </button>
+              <button
+                className="new-playlist-option"
+                onClick={() => { setShowNewPlaylistModal(false); fileInputRef.current?.click(); }}
+              >
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="option-icon">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 5 17 10"/><line x1="12" y1="5" x2="12" y2="17"/>
+                </svg>
+                <span className="option-title">Load JSON</span>
+                <span className="option-desc">Import a previously saved playlist file</span>
+              </button>
+              <button
+                className="new-playlist-option"
+                onClick={() => { setShowNewPlaylistModal(false); handleNewPlaylist(); }}
+              >
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="option-icon">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+                </svg>
+                <span className="option-title">Start blank</span>
+                <span className="option-desc">Begin with the default bucket structure</span>
+              </button>
             </div>
-            <div className="stat-sep" />
-            <div className="stat-item">
-              <span className="stat-num">{songCount}</span>
-              <span className="stat-desc">timed songs</span>
-            </div>
-            <div className="stat-sep" />
-            <div className="stat-item highlight">
-              <span className="stat-num">{formatTotalTime(totalSeconds)}</span>
-              <span className="stat-desc">total duration</span>
+            <div className="modal-actions">
+              <button className="modal-cancel" onClick={() => setShowNewPlaylistModal(false)}>Cancel</button>
             </div>
           </div>
         </div>
-      </footer>
+      )}
 
       {exportedUrl && (
         <div className="modal-overlay" onClick={() => setExportedUrl('')}>

@@ -41,3 +41,13 @@ Yes. Can you also add a dropdown or playlist selector near the top left title, s
 What are some recommeneded placeholder names if a playlist name is empty?
 Add a confirmation popu before remove a playlist from the left nav bar
 I'd like to have a place for me to manage (edit, remove) the bucket dropdowns. What do you recommend?
+Make sure the order of the playlist are fixed in the hambergur menu. Right now the order changed when I click into other tabs.
+Can you optimize the Spotify search so that it doesn't reach the limit so quickly? What are the options or alternatives?
+Please increase the button padding between icon and text in the json files and the sync buttons. Sometimes the playlist I deleted still shows up after a while. Is it not completly removed from firebase?
+On mobile view, only show enable bucket and posture columns, View mode only. And text in the notification bar to indicate this is mobile view mode.
+On moebil, remove the load JSON, but keep the cloudn sync buttons. Hide the playlist summary too. MusicBrainz and gear should be hidden and only displayed on edit mode.
+Does all sync happens to all playlist? Added last sync time next to the playlist name.
+Remove blue import button from the top right. Left nav should be addedto the left side of the page, not as an overlay. So when I click on hambuger to collapse it, the page content width became longer; when side panel is expanded, the page content decrease.
+The buttons with the nav should be fixed on the bottom, and not scrolled with the content on the right. Move the edit/view to the far right on the right side of the reset and export URIs buttons. Playlist bottom bar should move together with the right content panel too.
+Playlist summary should be fixed on the bottom. Remove the "Remove empty playlist" button. Remove the "Load JSON" since it's already in the new playlist modal. Make the "New playlist" button width contained in the nav.
+"New Playlist" button should be the same length as save JSON
