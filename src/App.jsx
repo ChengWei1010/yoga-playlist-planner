@@ -177,6 +177,17 @@ export default function App() {
   const [bucketDraft, setBucketDraft] = useState([]);
   const [newBucketName, setNewBucketName] = useState('');
   const [viewMode, setViewMode] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 700px)').matches);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 700px)');
+    const handler = e => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  const effectiveViewMode = isMobile || viewMode;
+
   const [spotifyRateLimited, setSpotifyRateLimited] = useState(false);
   const [rateLimitSecsLeft, setRateLimitSecsLeft] = useState(null);
   const rateLimitTimerRef = useRef(null);
@@ -670,17 +681,17 @@ export default function App() {
         </div>
 
         <div className="header-right">
-          <div className="mode-toggle">
+          {!isMobile && <div className="mode-toggle">
             <button className={`mode-btn${!viewMode ? ' mode-active' : ''}`} onClick={() => setViewMode(false)}>Edit</button>
             <button className={`mode-btn${viewMode ? ' mode-active' : ''}`} onClick={() => setViewMode(true)}>View</button>
-          </div>
-          <button className="gear-btn" onClick={handleOpenBucketModal} title="Manage buckets">
+          </div>}
+          {!isMobile && <button className="gear-btn" onClick={handleOpenBucketModal} title="Manage buckets">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
             </svg>
-          </button>
-          {!viewMode && <button className="reset-btn" onClick={() => setShowResetConfirm(true)}>Reset</button>}
-          {!viewMode && (
+          </button>}
+          {!effectiveViewMode && <button className="reset-btn" onClick={() => setShowResetConfirm(true)}>Reset</button>}
+          {!effectiveViewMode && (
             <button className="import-btn" onClick={() => { setShowImportModal(true); setImportError(''); setImportUrl(''); }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
@@ -688,7 +699,7 @@ export default function App() {
               Import
             </button>
           )}
-          {token && !viewMode && (
+          {token && !effectiveViewMode && (
             <button className="export-btn" onClick={handleExport}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 5 17 10"/><line x1="12" y1="5" x2="12" y2="17"/>
@@ -724,7 +735,16 @@ export default function App() {
         </div>
       </header>
 
-      {!token && (
+      {isMobile && (
+        <div className="spotify-banner mobile-banner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#6d28d9">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+          </svg>
+          Mobile view — showing bucket and posture only. Open on a larger screen to edit.
+        </div>
+      )}
+
+      {!token && !isMobile && (
         <div className="spotify-banner">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="#1a7fbf">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
@@ -776,20 +796,20 @@ export default function App() {
             ))}
           </ul>
           <div className="sidebar-footer">
-            <button className="sidebar-action-btn" onClick={handleSaveJSON}>
+            {!isMobile && <button className="sidebar-action-btn" onClick={handleSaveJSON}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
               Save JSON
-            </button>
-            <label className="sidebar-action-btn sidebar-load-label">
+            </button>}
+            {!isMobile && <label className="sidebar-action-btn sidebar-load-label">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 5 17 10"/><line x1="12" y1="5" x2="12" y2="17"/>
               </svg>
               Load JSON
               <input ref={fileInputRef} type="file" accept=".json" onChange={handleLoadJSON} style={{display:'none'}} />
-            </label>
-            {spotifyUser && (<>
+            </label>}
+            {spotifyUser ? (<>
               <button className="sidebar-action-btn sidebar-sync-btn" onClick={handlePullFromCloud} disabled={syncStatus === 'pulling' || syncStatus === 'pushing'}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
@@ -808,7 +828,9 @@ export default function App() {
                 </svg>
                 {syncStatus === 'pushing' ? 'Cleaning…' : 'Remove empty playlists'}
               </button>
-            </>)}
+            </>) : (
+              <span className="sidebar-sync-hint">Connect Spotify to enable cloud sync</span>
+            )}
           </div>
         </aside>
 
@@ -816,14 +838,14 @@ export default function App() {
           <table className="playlist-table">
             <thead>
               <tr>
-                {!viewMode && <th className="th-drag" aria-label="Reorder"></th>}
+                {!effectiveViewMode && <th className="th-drag" aria-label="Reorder"></th>}
                 <th className="th-bucket">Bucket</th>
                 <th className="th-time">Time</th>
                 <th className="th-song">Song</th>
                 <th className="th-songmin">Song length</th>
                 <th className="th-posture">Posture</th>
-                {!viewMode && <th className="th-status">Status</th>}
-                {!viewMode && <th className="th-actions" aria-label="Actions"></th>}
+                {!effectiveViewMode && <th className="th-status">Status</th>}
+                {!effectiveViewMode && <th className="th-actions" aria-label="Actions"></th>}
               </tr>
             </thead>
             <DndContext
@@ -881,7 +903,7 @@ export default function App() {
                         onAddBelow={handleAddBelow}
                         onAddSongToBucket={handleAddSongToBucket}
                         onRateLimit={handleRateLimit}
-                        viewMode={viewMode}
+                        viewMode={effectiveViewMode}
                       />
                     );
                   })}
@@ -889,7 +911,7 @@ export default function App() {
               </SortableContext>
             </DndContext>
           </table>
-          {!viewMode && (
+          {!effectiveViewMode && (
           <div className="table-footer-actions">
             <button className="add-bucket-btn" onClick={handleAddRow}>
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none">

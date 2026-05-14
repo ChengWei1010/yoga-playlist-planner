@@ -125,7 +125,7 @@ export function SortableRow({ row, index, token, isContinuation, parentBucket, b
       )}
 
       {/* Time */}
-      <td>
+      <td className="col-time">
         {isContinuation ? null : (
           <span className="bucket-time-display">{bucketTotalTime || '—'}</span>
         )}
@@ -167,7 +167,7 @@ export function SortableRow({ row, index, token, isContinuation, parentBucket, b
       </td>
 
       {/* Song length */}
-      <td>
+      <td className="col-songmin">
         {viewMode ? (
           <span className="view-cell-text">{row.songMin || '—'}</span>
         ) : (
